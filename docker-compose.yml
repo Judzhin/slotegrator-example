@@ -1,0 +1,60 @@
+version: '3.5'
+
+services:
+
+  # php-fpm
+  php-fpm:
+    container_name: slotegrator-php-fpm
+    build:
+      context: .
+      target: ${APP_ENV}
+      dockerfile: .docker/php-fpm/Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
+    volumes:
+    - ./example:/var/www/html:rw
+    - ~/.composer:/root/.composer/cache
+
+  nginx:
+    container_name: slotegrator-nginx
+    build:
+      context: .
+      target: ${APP_ENV}
+      dockerfile: .docker/nginx/Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
+    volumes:
+    - ./example:/var/www/html:rw
+    ports:
+    - 3107:80
+    depends_on:
+    - php-fpm
+
+  mariadb:
+    container_name: slotegrator-mariadb
+    build:
+      context: .
+      target: ${APP_ENV}
+      dockerfile: .docker/mariadb/Dockerfile
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+    - 33066:3306
+    volumes:
+    - slotegrator-data:/var/lib/mysql
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: slotegrator-pma
+    ports:
+    - 33080:80
+    environment:
+      PMA_HOST: ${PMA_HOST}
+      PMA_USER: ${PMA_USER}
+      PMA_PASSWORD: ${PMA_PASSWORD}
+
+volumes:
+  slotegrator-data:
